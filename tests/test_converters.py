@@ -37,9 +37,7 @@ class TestEnergy:
 
     def test_kwh_mj_roundtrip(self) -> None:
         original = 100.0
-        assert UnitConverter.mj_to_kwh(
-            UnitConverter.kwh_to_mj(original)
-        ) == pytest.approx(original)
+        assert UnitConverter.mj_to_kwh(UnitConverter.kwh_to_mj(original)) == pytest.approx(original)
 
 
 class TestPressure:

@@ -74,9 +74,7 @@ def validate_temperature(
     ValidationError
     """
     if not (min_c <= temp_c <= max_c):
-        raise ValidationError(
-            f"{name} = {temp_c} °C is outside plausible range [{min_c}, {max_c}]"
-        )
+        raise ValidationError(f"{name} = {temp_c} °C is outside plausible range [{min_c}, {max_c}]")
     return temp_c
 
 
@@ -88,9 +86,7 @@ def validate_u_value(u: float, name: str = "U-value") -> float:
     ValidationError
     """
     if not (0 < u <= 10.0):
-        raise ValidationError(
-            f"{name} = {u} W/(m²·K) is outside plausible range (0, 10]"
-        )
+        raise ValidationError(f"{name} = {u} W/(m²·K) is outside plausible range (0, 10]")
     return u
 
 
@@ -102,7 +98,5 @@ def validate_area(area_m2: float, name: str = "area") -> float:
     ValidationError
     """
     if not (0 < area_m2 <= 1_000_000):
-        raise ValidationError(
-            f"{name} = {area_m2} m² is outside plausible range"
-        )
+        raise ValidationError(f"{name} = {area_m2} m² is outside plausible range")
     return area_m2

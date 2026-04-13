@@ -14,6 +14,7 @@ from typing import NamedTuple
 # DIN EN 12831 — Design outdoor temperatures for selected cities
 # ---------------------------------------------------------------------------
 
+
 class DesignCondition(NamedTuple):
     """Outdoor design conditions for a city."""
 
@@ -107,6 +108,7 @@ DHW_DEMAND_LITRES_PER_PERSON: dict[str, float] = {
 # ---------------------------------------------------------------------------
 # Degree-day methods — rough annual energy estimate
 # ---------------------------------------------------------------------------
+
 
 def estimate_annual_heating_kwh(
     peak_load_kw: float,
