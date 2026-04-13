@@ -1,0 +1,117 @@
+"""Tests for the heating load calculator."""
+
+import pytest
+
+from ai_hvac.hvac.load_calc import (
+    ClimateZone,
+    EnvelopeSpec,
+    HeatingLoadCalculator,
+    LoadResult,
+)
+
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+
+@pytest.fixture()
+def residential_envelope() -> EnvelopeSpec:
+    """Typical post-2000 residential envelope (150 m² footprint)."""
+    return EnvelopeSpec(
+        wall_area_m2=300,
+        roof_area_m2=150,
+        floor_area_m2=150,
+        window_area_m2=60,
+        u_wall=0.28,
+        u_roof=0.20,
+        u_floor=0.35,
+        u_window=1.30,
+    )
+
+
+@pytest.fixture()
+def calculator() -> HeatingLoadCalculator:
+    return HeatingLoadCalculator(
+        climate_zone=ClimateZone.MODERATE_COLD,
+        building_type="residential",
+        heated_area_m2=450,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------
+
+class TestHeatingLoadCalculator:
+    """Unit tests for HeatingLoadCalculator."""
+
+    def test_basic_calculation_returns_load_result(
+        self, calculator: HeatingLoadCalculator, residential_envelope: EnvelopeSpec
+    ) -> None:
+        result = calculator.calculate(residential_envelope)
+        assert isinstance(result, LoadResult)
+
+    def test_total_load_is_positive(
+        self, calculator: HeatingLoadCalculator, residential_envelope: EnvelopeSpec
+    ) -> None:
+        result = calculator.calculate(residential_envelope)
+        assert result.total_heating_load_w > 0
+        assert result.total_heating_load_kw > 0
+
+    def test_transmission_exceeds_ventilation(
+        self, calculator: HeatingLoadCalculator, residential_envelope: EnvelopeSpec
+    ) -> None:
+        """For typical envelopes, transmission loss should dominate."""
+        result = calculator.calculate(residential_envelope)
+        assert result.transmission_loss_w > result.ventilation_loss_w
+
+    def test_specific_load_in_plausible_range(
+        self, calculator: HeatingLoadCalculator, residential_envelope: EnvelopeSpec
+    ) -> None:
+        result = calculator.calculate(residential_envelope)
+        # Typical range for post-2000 residential: 20–80 W/m²
+        assert 10 < result.specific_load_w_per_m2 < 150
+
+    def test_safety_factor_increases_load(
+        self, calculator: HeatingLoadCalculator, residential_envelope: EnvelopeSpec
+    ) -> None:
+        result_no_safety = calculator.calculate(
+            residential_envelope, safety_factor=1.0
+        )
+        result_with_safety = calculator.calculate(
+            residential_envelope, safety_factor=1.15
+        )
+        assert result_with_safety.total_heating_load_w > result_no_safety.total_heating_load_w
+
+    def test_cold_climate_higher_load(self, residential_envelope: EnvelopeSpec) -> None:
+        calc_cold = HeatingLoadCalculator(
+            climate_zone=ClimateZone.COLD,
+            heated_area_m2=450,
+        )
+        calc_mild = HeatingLoadCalculator(
+            climate_zone=ClimateZone.MILD,
+            heated_area_m2=450,
+        )
+        result_cold = calc_cold.calculate(residential_envelope)
+        result_mild = calc_mild.calculate(residential_envelope)
+        assert result_cold.total_heating_load_w > result_mild.total_heating_load_w
+
+    def test_assumptions_are_populated(
+        self, calculator: HeatingLoadCalculator, residential_envelope: EnvelopeSpec
+    ) -> None:
+        result = calculator.calculate(residential_envelope)
+        assert len(result.assumptions) > 0
+        assert any("Indoor" in a for a in result.assumptions)
+
+
+class TestClimateZone:
+    """Tests for climate zone enum."""
+
+    def test_design_temperatures_are_ordered(self) -> None:
+        temps = [zone.design_outdoor_temp for zone in ClimateZone]
+        # COLD should be coldest
+        assert ClimateZone.COLD.design_outdoor_temp < ClimateZone.MILD.design_outdoor_temp
+
+    @pytest.mark.parametrize("zone", list(ClimateZone))
+    def test_all_zones_have_design_temp(self, zone: ClimateZone) -> None:
+        assert isinstance(zone.design_outdoor_temp, float)
