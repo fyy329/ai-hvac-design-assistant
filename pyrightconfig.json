@@ -1,0 +1,13 @@
+{
+  "include": ["src", "tests", "examples"],
+  "venvPath": ".",
+  "venv": ".venv",
+  "extraPaths": ["src"],
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "pythonVersion": "3.10",
+      "extraPaths": ["src"]
+    }
+  ]
+}

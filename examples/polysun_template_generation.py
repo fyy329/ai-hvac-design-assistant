@@ -7,8 +7,6 @@ prints it as JSON.  The output can guide manual setup in the Polysun
 GUI or be used by future automation scripts.
 """
 
-import json
-
 from ai_hvac.hvac.load_calc import (
     ClimateZone,
     EnvelopeSpec,
