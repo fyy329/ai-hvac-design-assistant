@@ -92,9 +92,7 @@ def polysun_template(
         float, typer.Option(help="Daily DHW demand in litres.")
     ] = 200.0,
     hp_type: Annotated[str, typer.Option(help="air_source or ground_source.")] = "air_source",
-    with_solar: Annotated[
-        bool, typer.Option(help="Include solar or PVT collector loop.")
-    ] = False,
+    with_solar: Annotated[bool, typer.Option(help="Include solar or PVT collector loop.")] = False,
 ) -> None:
     """Generate a Polysun-oriented template as JSON."""
     generator = PolysunTemplateGenerator(
@@ -114,9 +112,7 @@ def recommend_system(
     cooling_required: Annotated[
         bool, typer.Option(help="Whether active cooling is required.")
     ] = False,
-    dhw_required: Annotated[
-        bool, typer.Option(help="Whether DHW production is required.")
-    ] = True,
+    dhw_required: Annotated[bool, typer.Option(help="Whether DHW production is required.")] = True,
     additional_context: Annotated[str, typer.Option(help="Free-form project notes.")] = "",
 ) -> None:
     """Request an AI-generated system recommendation."""
