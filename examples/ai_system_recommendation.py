@@ -50,9 +50,13 @@ if recommendation.warnings:
 print()
 print("-" * 60)
 answer = assistant.ask(
-    "What is the recommended buffer tank volume for a 2400 m2 "
-    "multi-family building with underfloor heating and an air-source "
-    "heat pump? Give the answer in litres and explain the sizing rule."
+    " ".join(
+        [
+            "What is the recommended buffer tank volume for a 2400 m2 multi-family",
+            "building with underfloor heating and an air-source heat pump?",
+            "Give the answer in litres and explain the sizing rule.",
+        ]
+    )
 )
 print("Follow-up Q&A:")
 print(answer)

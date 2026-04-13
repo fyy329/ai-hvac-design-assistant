@@ -4,67 +4,78 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any
 
 from ai_hvac.hvac.load_calc import ClimateZone, LoadResult
 
 logger = logging.getLogger(__name__)
 
 
-SYSTEM_TEMPLATES: dict[str, dict[str, Any]] = {
-    "gas_boiler": {
-        "label": "Condensing gas boiler",
-        "components": ["Gas condensing boiler", "Buffer tank", "DHW tank"],
-        "typical_efficiency": 0.96,
-        "max_supply_temp": 80,
-        "renewable": False,
-    },
-    "ashp": {
-        "label": "Air-source heat pump",
-        "components": ["Air-source heat pump", "Buffer tank", "DHW tank"],
-        "typical_cop": 3.5,
-        "max_supply_temp": 55,
-        "renewable": True,
-    },
-    "gshp": {
-        "label": "Ground-source heat pump",
-        "components": ["Ground-source heat pump", "Borehole heat exchangers", "Buffer tank"],
-        "typical_cop": 4.5,
-        "max_supply_temp": 55,
-        "renewable": True,
-    },
-    "ashp_gas_backup": {
-        "label": "Air-source heat pump + gas boiler backup",
-        "components": [
+@dataclass(frozen=True)
+class SystemTemplate:
+    """Static metadata for a recommendation template."""
+
+    label: str
+    components: tuple[str, ...]
+    max_supply_temp: int
+    renewable: bool
+    typical_efficiency: float | None = None
+    typical_cop: float | None = None
+
+
+SYSTEM_TEMPLATES: dict[str, SystemTemplate] = {
+    "gas_boiler": SystemTemplate(
+        label="Condensing gas boiler",
+        components=("Gas condensing boiler", "Buffer tank", "DHW tank"),
+        typical_efficiency=0.96,
+        max_supply_temp=80,
+        renewable=False,
+    ),
+    "ashp": SystemTemplate(
+        label="Air-source heat pump",
+        components=("Air-source heat pump", "Buffer tank", "DHW tank"),
+        typical_cop=3.5,
+        max_supply_temp=55,
+        renewable=True,
+    ),
+    "gshp": SystemTemplate(
+        label="Ground-source heat pump",
+        components=("Ground-source heat pump", "Borehole heat exchangers", "Buffer tank"),
+        typical_cop=4.5,
+        max_supply_temp=55,
+        renewable=True,
+    ),
+    "ashp_gas_backup": SystemTemplate(
+        label="Air-source heat pump + gas boiler backup",
+        components=(
             "Air-source heat pump",
             "Gas condensing boiler (backup)",
             "Buffer tank",
             "DHW tank",
-        ],
-        "typical_cop": 3.2,
-        "max_supply_temp": 80,
-        "renewable": True,
-    },
-    "pvt_gshp": {
-        "label": "PVT + ground-source heat pump",
-        "components": [
+        ),
+        typical_cop=3.2,
+        max_supply_temp=80,
+        renewable=True,
+    ),
+    "pvt_gshp": SystemTemplate(
+        label="PVT + ground-source heat pump",
+        components=(
             "PVT collectors",
             "Ground-source heat pump",
             "Borehole heat exchangers",
             "Buffer tank",
             "DHW tank",
-        ],
-        "typical_cop": 5.0,
-        "max_supply_temp": 55,
-        "renewable": True,
-    },
-    "district_heating": {
-        "label": "District heating connection",
-        "components": ["District heating substation", "DHW tank"],
-        "typical_efficiency": 0.95,
-        "max_supply_temp": 90,
-        "renewable": False,
-    },
+        ),
+        typical_cop=5.0,
+        max_supply_temp=55,
+        renewable=True,
+    ),
+    "district_heating": SystemTemplate(
+        label="District heating connection",
+        components=("District heating substation", "DHW tank"),
+        typical_efficiency=0.95,
+        max_supply_temp=90,
+        renewable=False,
+    ),
 }
 
 
@@ -90,9 +101,9 @@ class SystemDesigner:
         building_type: str,
         load_result: LoadResult,
     ) -> None:
-        self.climate_zone = climate_zone
-        self.building_type = building_type.lower()
-        self.load = load_result
+        self.climate_zone: ClimateZone = climate_zone
+        self.building_type: str = building_type.lower()
+        self.load: LoadResult = load_result
 
     def recommend(self, *, top_n: int = 3) -> list[DesignRecommendation]:
         """Return up to *top_n* ranked system recommendations."""
@@ -104,7 +115,7 @@ class SystemDesigner:
             rationale_parts: list[str] = []
             warnings: list[str] = []
 
-            if template.get("renewable"):
+            if template.renewable:
                 score += 20
                 rationale_parts.append("Renewable energy source preferred")
 
@@ -122,10 +133,11 @@ class SystemDesigner:
 
             if specific > 80 and key in ("ashp", "gshp", "pvt_gshp"):
                 score -= 10
-                warnings.append(
+                warning_text = (
                     f"High specific load ({specific:.0f} W/m2) - "
-                    "consider envelope improvement before heat pump"
+                    + "consider envelope improvement before heat pump"
                 )
+                warnings.append(warning_text)
 
             if specific > 100 and key == "ashp_gas_backup":
                 score += 5
@@ -156,14 +168,17 @@ class SystemDesigner:
         recommendations: list[DesignRecommendation] = []
         for rank, (key, _score, rationale, warnings) in enumerate(scores[:top_n], start=1):
             template = SYSTEM_TEMPLATES[key]
+            estimated_cop = template.typical_cop
+            if estimated_cop is None:
+                estimated_cop = template.typical_efficiency
             recommendations.append(
                 DesignRecommendation(
                     rank=rank,
                     system_key=key,
-                    label=template["label"],
-                    components=list(template["components"]),
+                    label=template.label,
+                    components=list(template.components),
                     rationale=rationale,
-                    estimated_cop=template.get("typical_cop") or template.get("typical_efficiency"),
+                    estimated_cop=estimated_cop,
                     warnings=warnings,
                 )
             )

@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any
+from typing import TypeAlias, cast
 
 from ai_hvac.core.exceptions import LLMError
 
+JSONScalar: TypeAlias = str | int | float | bool | None
+JSONValue: TypeAlias = JSONScalar | list["JSONValue"] | dict[str, "JSONValue"]
+JSONObject: TypeAlias = dict[str, JSONValue]
 
-def extract_json(text: str) -> dict[str, Any]:
+
+def extract_json(text: str) -> JSONObject:
     """Extract the first JSON object from *text*."""
     cleaned = re.sub(r"^```(?:json)?\s*\n?", "", text.strip(), flags=re.MULTILINE)
     cleaned = re.sub(r"\n?```\s*$", "", cleaned.strip(), flags=re.MULTILINE)
@@ -27,12 +31,14 @@ def extract_json(text: str) -> dict[str, Any]:
 
     if not isinstance(data, dict):
         raise LLMError(f"Expected a JSON object, got {type(data).__name__}")
-    return data
+    return cast(JSONObject, data)
 
 
-def safe_float(value: Any, default: float | None = 0.0) -> float | None:
+def safe_float(value: object, default: float | None = 0.0) -> float | None:
     """Coerce *value* to ``float``, falling back to *default*."""
     if value is None:
+        return default
+    if not isinstance(value, int | float | str):
         return default
     try:
         return float(value)
@@ -40,7 +46,7 @@ def safe_float(value: Any, default: float | None = 0.0) -> float | None:
         return default
 
 
-def safe_list(value: Any) -> list[str]:
+def safe_list(value: object) -> list[str]:
     """Ensure *value* is a list of strings."""
     if isinstance(value, list):
         return [str(v) for v in value]

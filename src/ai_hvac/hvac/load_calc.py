@@ -72,14 +72,14 @@ class EnvelopeSpec:
     u_window: float = 1.3
 
     def __post_init__(self) -> None:
-        validate_area(self.wall_area_m2, name="wall_area_m2")
-        validate_area(self.roof_area_m2, name="roof_area_m2")
-        validate_area(self.floor_area_m2, name="floor_area_m2")
-        validate_area(self.window_area_m2, name="window_area_m2")
-        validate_u_value(self.u_wall, name="u_wall")
-        validate_u_value(self.u_roof, name="u_roof")
-        validate_u_value(self.u_floor, name="u_floor")
-        validate_u_value(self.u_window, name="u_window")
+        self.wall_area_m2 = validate_area(self.wall_area_m2, name="wall_area_m2")
+        self.roof_area_m2 = validate_area(self.roof_area_m2, name="roof_area_m2")
+        self.floor_area_m2 = validate_area(self.floor_area_m2, name="floor_area_m2")
+        self.window_area_m2 = validate_area(self.window_area_m2, name="window_area_m2")
+        self.u_wall = validate_u_value(self.u_wall, name="u_wall")
+        self.u_roof = validate_u_value(self.u_roof, name="u_roof")
+        self.u_floor = validate_u_value(self.u_floor, name="u_floor")
+        self.u_window = validate_u_value(self.u_window, name="u_window")
 
 
 @dataclass
@@ -107,9 +107,9 @@ class HeatingLoadCalculator:
         building_type: str = "residential",
         heated_area_m2: float = 100.0,
     ) -> None:
-        self.climate_zone = climate_zone
-        self.building_type = building_type.lower()
-        self.heated_area_m2 = validate_area(heated_area_m2, name="heated_area_m2")
+        self.climate_zone: ClimateZone = climate_zone
+        self.building_type: str = building_type.lower()
+        self.heated_area_m2: float = validate_area(heated_area_m2, name="heated_area_m2")
 
     def calculate(
         self,
@@ -120,9 +120,11 @@ class HeatingLoadCalculator:
         safety_factor: float = 1.15,
     ) -> LoadResult:
         """Calculate the design heating load."""
-        validate_non_negative(ventilation_rate_ach, name="ventilation_rate_ach")
-        validate_positive(room_height_m, name="room_height_m")
-        validate_positive(safety_factor, name="safety_factor")
+        ventilation_rate_ach = validate_non_negative(
+            ventilation_rate_ach, name="ventilation_rate_ach"
+        )
+        room_height_m = validate_positive(room_height_m, name="room_height_m")
+        safety_factor = validate_positive(safety_factor, name="safety_factor")
 
         t_indoor = SETPOINT_TEMP.get(self.building_type, 20.0)
         t_outdoor = self.climate_zone.design_outdoor_temp

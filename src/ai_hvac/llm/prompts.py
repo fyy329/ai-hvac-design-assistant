@@ -14,12 +14,18 @@ class PromptLibrary:
     # -- System prompts -----------------------------------------------------
 
     SYSTEM_ENGINEER: str = (
-        "You are a senior HVAC and building energy systems engineer with 20 years "
-        "of experience.  You are precise, reference DIN/EN/ASHRAE standards where "
-        "applicable, and always provide quantitative reasoning.  When asked for a "
-        "system design, you consider climate, envelope quality, occupancy, DHW "
-        "demand, and local energy prices.  You communicate clearly and "
-        "professionally."
+        (
+            """
+        You are a senior HVAC and building energy systems engineer with 20 years of experience.
+        You are precise, reference DIN/EN/ASHRAE standards where applicable,
+        and always provide quantitative reasoning.
+        When asked for a system design, you consider climate, envelope quality,
+        occupancy, DHW demand, and local energy prices.
+        You communicate clearly and professionally.
+        """
+        )
+        .strip()
+        .replace("\n", " ")
     )
 
     # -- User prompt builders -----------------------------------------------
@@ -45,7 +51,7 @@ class PromptLibrary:
             "",
             f"- **Building type**: {building_type}",
             f"- **Location**: {location}",
-            f"- **Heated floor area**: {heated_area_m2} m²",
+            f"- **Heated floor area**: {heated_area_m2} m2",
             f"- **Cooling required**: {'yes' if cooling_required else 'no'}",
             f"- **DHW required**: {'yes' if dhw_required else 'no'}",
         ]
@@ -78,20 +84,26 @@ class PromptLibrary:
         ``heating_load_kw``, ``cooling_load_kw``, ``assumptions``,
         ``confidence``.
         """
+        introduction = " ".join(
+            [
+                "Estimate the design heating load and cooling load if applicable",
+                "for the following building.",
+                "Use DIN EN 12831 methodology where possible.",
+            ]
+        )
         parts = [
-            "Estimate the design heating load (and cooling load if applicable) "
-            "for the following building.  Use DIN EN 12831 methodology where possible.",
+            introduction,
             "",
             f"- **Building type**: {building_type}",
             f"- **Location**: {location}",
-            f"- **Heated floor area**: {heated_area_m2} m²",
+            f"- **Heated floor area**: {heated_area_m2} m2",
         ]
         if u_values:
-            parts.append("- **Envelope U-values (W/m²K)**:")
+            parts.append("- **Envelope U-values (W/m2K)**:")
             for component, value in u_values.items():
                 parts.append(f"    - {component}: {value}")
         if ventilation_rate is not None:
-            parts.append(f"- **Design ventilation rate**: {ventilation_rate} m³/h")
+            parts.append(f"- **Design ventilation rate**: {ventilation_rate} m3/h")
 
         parts += [
             "",
@@ -120,7 +132,7 @@ class PromptLibrary:
             "",
             f"- **System type**: {system_type}",
             f"- **Components**: {', '.join(components)}",
-            f"- **Heated area**: {heated_area_m2} m²",
+            f"- **Heated area**: {heated_area_m2} m2",
             f"- **DHW demand**: {dhw_demand_litres_day} litres/day",
             "",
             "Reply in **JSON** with the following structure:",

@@ -1,51 +1,63 @@
-<p align="center">
-  <h1 align="center">🏗️ AI HVAC Design Assistant</h1>
-  <p align="center">
-    <strong>AI-powered toolkit for HVAC system design, load calculation, and building energy simulation automation.</strong>
-  </p>
-  <p align="center">
-    <a href="https://github.com/fyy329/ai-hvac-design-assistant/actions/workflows/ci.yml"><img src="https://github.com/fyy329/ai-hvac-design-assistant/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-    <a href="https://github.com/fyy329/ai-hvac-design-assistant/actions/workflows/lint.yml"><img src="https://github.com/fyy329/ai-hvac-design-assistant/actions/workflows/lint.yml/badge.svg" alt="Lint"></a>
-    <a href="https://github.com/fyy329/ai-hvac-design-assistant/blob/main/LICENSE"><img src="https://img.shields.io/github/license/fyy329/ai-hvac-design-assistant" alt="License"></a>
-    <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10+"></a>
-  </p>
-</p>
+# AI HVAC Design Assistant
 
----
+AI-powered toolkit for HVAC system design, load calculation, and simulation automation.
 
-## 🎯 The Problem
+[![CI](https://github.com/fyy329/ai-hvac-design-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/fyy329/ai-hvac-design-assistant/actions/workflows/ci.yml)
+[![Lint](https://github.com/fyy329/ai-hvac-design-assistant/actions/workflows/lint.yml/badge.svg)](https://github.com/fyy329/ai-hvac-design-assistant/actions/workflows/lint.yml)
+[![License](https://img.shields.io/github/license/fyy329/ai-hvac-design-assistant)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
 
-HVAC and building energy system design involves **repetitive, complex workflows**: calculating heating loads, selecting equipment, configuring simulation software, comparing design variants. Engineers spend countless hours on tasks that follow predictable patterns — exactly the kind of work AI can accelerate.
+## What It Does
 
-Yet unlike software development (which has Copilot, Cursor, etc.), **the HVAC engineering domain has virtually no open-source AI tooling**.
+The project focuses on common early-stage HVAC engineering workflows:
 
-## 💡 The Solution
+- deterministic heating-load calculations
+- rule-based and AI-assisted system recommendations
+- Polysun-oriented simulation templates
+- Modelica skeleton generation
+- unit conversions and input validation helpers
 
-**AI HVAC Design Assistant** bridges this gap by providing:
+The goal is to make repetitive design and simulation setup work easier to automate without hiding engineering assumptions.
 
-- 🔢 **Deterministic Calculators** — Heating load calculation based on DIN EN 12831, with standard reference data (U-values, design temperatures, DHW demand).
-- 🤖 **AI-Powered Design** — OpenAI-backed system recommendations, load estimation, and interactive Q&A with HVAC-domain expertise.
-- ⚙️ **Simulation Automation** — Generate pre-configured templates for [Polysun](https://www.velasolaris.com/) and [Modelica](https://modelica.org/) from design parameters.
-- 🔄 **Unit Conversions** — Comprehensive metric ↔ imperial converters for temperatures, energy, pressure, flow rates, and U-values.
-
-```
-Building Parameters ──▶ Load Calculator ──▶ System Recommender ──▶ Simulation Template
-        │                                         │
-        └──── AI Enhancement (OpenAI) ────────────┘
-```
-
-## 🚀 Quick Start
-
-### Installation
+## Installation
 
 ```bash
 git clone https://github.com/fyy329/ai-hvac-design-assistant.git
 cd ai-hvac-design-assistant
-python -m venv .venv && .venv\Scripts\activate   # Windows
+python -m venv .venv
+```
+
+Activate the virtual environment:
+
+```bash
+# Linux / macOS
+source .venv/bin/activate
+
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+```
+
+Install the package with development tools:
+
+```bash
 pip install -e ".[dev]"
 ```
 
-### Heating Load Calculation (no API key needed)
+If you want to use AI-backed features, create a `.env` file and add your API key:
+
+```bash
+copy .env.example .env
+```
+
+Then set:
+
+```env
+OPENAI_API_KEY=sk-your-key-here
+```
+
+## Quick Start
+
+### Python API
 
 ```python
 from ai_hvac.hvac.load_calc import ClimateZone, EnvelopeSpec, HeatingLoadCalculator
@@ -55,102 +67,137 @@ calc = HeatingLoadCalculator(
     building_type="residential",
     heated_area_m2=450,
 )
+
 envelope = EnvelopeSpec(
-    wall_area_m2=300, roof_area_m2=150,
-    floor_area_m2=150, window_area_m2=60,
+    wall_area_m2=300,
+    roof_area_m2=150,
+    floor_area_m2=150,
+    window_area_m2=60,
 )
+
 result = calc.calculate(envelope)
 
 print(f"Heating load: {result.total_heating_load_kw:.1f} kW")
-print(f"Specific load: {result.specific_load_w_per_m2:.0f} W/m²")
+print(f"Specific load: {result.specific_load_w_per_m2:.0f} W/m2")
 ```
 
-### AI System Recommendation (requires OpenAI API key)
+AI-assisted recommendation:
 
 ```python
 from ai_hvac import HVACAssistant
 
 assistant = HVACAssistant()
-rec = assistant.recommend_system(
+recommendation = assistant.recommend_system(
     building_type="multi-family residential",
     location="Munich, Germany",
     heated_area_m2=2400,
-    additional_context="Underfloor heating, 35/28 °C design temps, rooftop PVT possible",
+    additional_context="Underfloor heating, 35/28 degC design temps, rooftop PVT possible",
 )
 
-print(f"System: {rec.system_type}")
-print(f"COP: {rec.estimated_cop}")
-for comp in rec.components:
-    print(f"  • {comp}")
+print(recommendation.system_type)
+print(recommendation.estimated_cop)
+for component in recommendation.components:
+    print(f"  - {component}")
 ```
 
-### Generate Polysun Template
+Polysun template generation:
 
 ```python
 from ai_hvac.simulation.polysun import PolysunTemplateGenerator
 
-gen = PolysunTemplateGenerator(heating_load_kw=25.0, dhw_demand_litres_day=400)
-template = gen.heat_pump_template(hp_type="ground_source", with_solar=True)
+generator = PolysunTemplateGenerator(heating_load_kw=25.0, dhw_demand_litres_day=400)
+template = generator.heat_pump_template(hp_type="ground_source", with_solar=True)
 print(template.to_json())
 ```
 
-## 📦 Project Structure
+### CLI
 
-```
-src/ai_hvac/
-├── core/          # Configuration, exceptions
-├── llm/           # OpenAI client, prompts, parsers
-├── hvac/          # Load calc, system design, standards data
-├── simulation/    # Polysun & Modelica template generators
-└── utils/         # Unit converters, validators
+The package exposes the `ai-hvac` command:
+
+```bash
+ai-hvac version
 ```
 
-## 🧪 Running Tests
+Heating-load calculation from the command line:
+
+```bash
+ai-hvac load-calc ^
+  --heated-area-m2 480 ^
+  --wall-area-m2 320 ^
+  --roof-area-m2 160 ^
+  --floor-area-m2 160 ^
+  --window-area-m2 70
+```
+
+Polysun-oriented template output:
+
+```bash
+ai-hvac polysun-template --heating-load-kw 25 --with-solar
+```
+
+## Development
+
+Run the core checks locally before pushing:
 
 ```bash
 pytest
+ruff check src tests examples
+ruff format --check src tests examples
+mypy src tests examples
+basedpyright
 ```
 
-## 📋 Supported Standards & Tools
+Example scripts:
+
+```bash
+python examples/basic_load_calculation.py
+python examples/polysun_template_generation.py
+python examples/ai_system_recommendation.py
+```
+
+The AI example requires `OPENAI_API_KEY`.
+
+## Project Structure
+
+```text
+src/ai_hvac/
+|- core/        # configuration and exception types
+|- hvac/        # load calculation, system design, reference data
+|- llm/         # OpenAI client, prompts, parsing helpers
+|- simulation/  # Polysun and Modelica template generation
+`- utils/       # converters and validators
+```
+
+## Documentation
+
+- [Getting Started](docs/getting-started.md)
+- [Architecture](docs/architecture.md)
+- [API Reference](docs/api-reference.md)
+- [Roadmap](ROADMAP.md)
+
+## Supported Standards and Tools
 
 | Standard / Tool | Coverage |
-|----------------|----------|
-| DIN EN 12831 | Simplified heating load calculation |
-| DIN 4108 / EnEV / GEG | U-value reference tables |
+|-----------------|----------|
+| DIN EN 12831 | Simplified heating-load calculation |
+| DIN 4108 / EnEV / GEG | Reference U-value tables |
 | DIN 4708 / VDI 2067 | DHW demand profiles |
 | Polysun | Simulation template generation |
 | Modelica / AixLib | Skeleton model generation |
-| ASHRAE | Design condition data |
+| ASHRAE | Design-condition reference data |
 
-## 🗺️ Roadmap
+## Contributing
 
-See [ROADMAP.md](ROADMAP.md) for the full development plan. Key upcoming features:
+Contributions are welcome. See [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
-- Cooling load calculator (VDI 2078)
-- Weather data integration (TRY / TMY / EPW)
-- Automated Polysun XML generation
-- RAG pipeline for HVAC standards retrieval
-- Web-based interactive demo
-- BIM / IFC data import
+Areas that still have plenty of room for improvement:
 
-## 🤝 Contributing
+- cooling-load calculation
+- weather and climate file integration
+- automated Polysun export formats
+- HVAC standards retrieval / RAG
+- web UI and visualization
 
-Contributions are welcome! See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for guidelines.
+## License
 
-**Areas where help is especially needed:**
-- HVAC standards implementation (cooling loads, DHW profiles)
-- Climate / weather data parsing
-- Multi-language documentation (DE, ZH)
-- Web UI development
-
-## 📄 License
-
-[MIT](LICENSE) — free for academic, commercial, and personal use.
-
-## 🔗 Related Projects
-
-- [Polysun](https://www.velasolaris.com/) — Solar and HVAC system simulation
-- [nPro](https://npro.energy/) — District energy planning
-- [AixLib](https://github.com/RWTH-EBC/AixLib) — Modelica library for building energy
-- [TEASER](https://github.com/RWTH-EBC/TEASER) — Building model generator for Modelica
-- [OpenModelica](https://openmodelica.org/) — Open-source Modelica simulation
+[MIT](LICENSE)

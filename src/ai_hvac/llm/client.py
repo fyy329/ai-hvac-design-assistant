@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any
 
 from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
+from openai.types.shared_params import ResponseFormatJSONObject
 
 from ai_hvac.core.config import Settings
 from ai_hvac.core.exceptions import LLMError
@@ -14,6 +15,7 @@ from ai_hvac.llm.parsers import extract_json, safe_float, safe_list
 from ai_hvac.llm.prompts import PromptLibrary
 
 logger = logging.getLogger(__name__)
+JSON_RESPONSE_FORMAT: ResponseFormatJSONObject = {"type": "json_object"}
 
 
 @dataclass
@@ -41,9 +43,9 @@ class HVACAssistant:
     """High-level AI assistant for HVAC design tasks."""
 
     def __init__(self, settings: Settings | None = None) -> None:
-        self._settings = settings if settings is not None else Settings()  # type: ignore[call-arg]
-        self._client = OpenAI(api_key=self._settings.get_openai_key())
-        self._prompts = PromptLibrary()
+        self._settings: Settings = settings if settings is not None else Settings()
+        self._client: OpenAI = OpenAI(api_key=self._settings.get_openai_key())
+        self._prompts: PromptLibrary = PromptLibrary()
 
     def recommend_system(
         self,
@@ -67,7 +69,7 @@ class HVACAssistant:
         raw = self._chat(
             system=self._prompts.SYSTEM_ENGINEER,
             user=user_prompt,
-            response_format={"type": "json_object"},
+            response_format=JSON_RESPONSE_FORMAT,
         )
         return self._parse_recommendation(raw)
 
@@ -91,7 +93,7 @@ class HVACAssistant:
         raw = self._chat(
             system=self._prompts.SYSTEM_ENGINEER,
             user=user_prompt,
-            response_format={"type": "json_object"},
+            response_format=JSON_RESPONSE_FORMAT,
         )
         return self._parse_load_estimate(raw)
 
@@ -107,24 +109,31 @@ class HVACAssistant:
         system: str,
         user: str,
         *,
-        response_format: dict[str, str] | None = None,
+        response_format: ResponseFormatJSONObject | None = None,
     ) -> str:
         """Send a single chat-completion request and return the content."""
-        kwargs: dict[str, Any] = {
-            "model": self._settings.openai_model,
-            "messages": [
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-            "max_tokens": self._settings.openai_max_tokens,
-            "temperature": self._settings.openai_temperature,
-        }
-        if response_format is not None:
-            kwargs["response_format"] = response_format
+        messages: list[ChatCompletionMessageParam] = [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ]
 
         logger.debug("Sending chat-completion request (model=%s)", self._settings.openai_model)
         try:
-            response = self._client.chat.completions.create(**kwargs)
+            if response_format is None:
+                response = self._client.chat.completions.create(
+                    model=self._settings.openai_model,
+                    messages=messages,
+                    max_tokens=self._settings.openai_max_tokens,
+                    temperature=self._settings.openai_temperature,
+                )
+            else:
+                response = self._client.chat.completions.create(
+                    model=self._settings.openai_model,
+                    messages=messages,
+                    max_tokens=self._settings.openai_max_tokens,
+                    temperature=self._settings.openai_temperature,
+                    response_format=response_format,
+                )
         except Exception as exc:
             raise LLMError(f"OpenAI API call failed: {exc}") from exc
 
