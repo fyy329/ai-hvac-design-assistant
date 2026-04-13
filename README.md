@@ -46,7 +46,11 @@ pip install -e ".[dev]"
 If you want to use AI-backed features, create a `.env` file and add your API key:
 
 ```bash
-copy .env.example .env
+cp .env.example .env
+```
+
+```powershell
+Copy-Item .env.example .env
 ```
 
 Then set:
@@ -121,12 +125,7 @@ ai-hvac version
 Heating-load calculation from the command line:
 
 ```bash
-ai-hvac load-calc ^
-  --heated-area-m2 480 ^
-  --wall-area-m2 320 ^
-  --roof-area-m2 160 ^
-  --floor-area-m2 160 ^
-  --window-area-m2 70
+ai-hvac load-calc --heated-area-m2 480 --wall-area-m2 320 --roof-area-m2 160 --floor-area-m2 160 --window-area-m2 70
 ```
 
 Polysun-oriented template output:

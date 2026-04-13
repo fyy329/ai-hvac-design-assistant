@@ -37,7 +37,11 @@ pip install -e ".[dev]"
 Create a local `.env` file from the example:
 
 ```bash
-copy .env.example .env
+cp .env.example .env
+```
+
+```powershell
+Copy-Item .env.example .env
 ```
 
 Add your API key if you plan to use AI features:
@@ -115,12 +119,7 @@ ai-hvac version
 Run a heating-load calculation:
 
 ```bash
-ai-hvac load-calc ^
-  --heated-area-m2 480 ^
-  --wall-area-m2 320 ^
-  --roof-area-m2 160 ^
-  --floor-area-m2 160 ^
-  --window-area-m2 70
+ai-hvac load-calc --heated-area-m2 480 --wall-area-m2 320 --roof-area-m2 160 --floor-area-m2 160 --window-area-m2 70
 ```
 
 Generate a template for Polysun-style setup:
