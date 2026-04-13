@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from typing import NamedTuple
 
-
 # ---------------------------------------------------------------------------
 # DIN EN 12831 — Design outdoor temperatures for selected cities
 # ---------------------------------------------------------------------------

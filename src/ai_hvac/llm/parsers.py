@@ -45,7 +45,7 @@ def extract_json(text: str) -> dict[str, Any]:
         # Fall back: try to find the first { ... } block
         match = re.search(r"\{.*\}", text, re.DOTALL)
         if match is None:
-            raise LLMError("No JSON object found in LLM response")
+            raise LLMError("No JSON object found in LLM response") from None
         try:
             data = json.loads(match.group())
         except json.JSONDecodeError as exc:

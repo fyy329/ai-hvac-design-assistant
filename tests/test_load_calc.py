@@ -9,7 +9,6 @@ from ai_hvac.hvac.load_calc import (
     LoadResult,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -108,7 +107,6 @@ class TestClimateZone:
     """Tests for climate zone enum."""
 
     def test_design_temperatures_are_ordered(self) -> None:
-        temps = [zone.design_outdoor_temp for zone in ClimateZone]
         # COLD should be coldest
         assert ClimateZone.COLD.design_outdoor_temp < ClimateZone.MILD.design_outdoor_temp
 

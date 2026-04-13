@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 import json
-from unittest.mock import MagicMock, patch
 
 import pytest
 
 from ai_hvac.llm.client import HVACAssistant, LoadEstimate, SystemRecommendation
 from ai_hvac.llm.parsers import extract_json, safe_float, safe_list
-
 
 # ---------------------------------------------------------------------------
 # Parser tests (no mocking needed)
