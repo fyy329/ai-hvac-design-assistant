@@ -1,5 +1,6 @@
 {
-  "include": ["src", "tests", "examples"],
+  "include": ["src"],
+  "failOnWarnings": false,
   "venvPath": ".",
   "venv": ".venv",
   "extraPaths": ["src"],

@@ -2,82 +2,74 @@
 
 ## High-Level Overview
 
-```
-┌───────────────────────────────────────────────┐
-│                User / CLI / API               │
-└──────────────────┬────────────────────────────┘
-                   │
-        ┌──────────▼──────────┐
-        │   ai_hvac (Python)  │
-        └──────────┬──────────┘
-                   │
-    ┌──────────────┼──────────────┐
-    │              │              │
-    ▼              ▼              ▼
-┌────────┐  ┌──────────┐  ┌────────────┐
-│  hvac  │  │   llm    │  │ simulation │
-│        │  │          │  │            │
-│ • load │  │ • client │  │ • polysun  │
-│   calc │  │ • prompts│  │ • modelica │
-│ • sys  │  │ • parsers│  │            │
-│  design│  │          │  │            │
-│ • std  │  │          │  │            │
-└────┬───┘  └────┬─────┘  └─────┬──────┘
-     │           │              │
-     └───────────┼──────────────┘
-                 │
-        ┌────────▼────────┐
-        │      core       │
-        │ • config        │
-        │ • exceptions    │
-        └────────┬────────┘
-                 │
-        ┌────────▼────────┐
-        │     utils       │
-        │ • converters    │
-        │ • validators    │
-        └─────────────────┘
+```text
+User / CLI / Python API
+          |
+          v
+     ai_hvac package
+          |
+    +-----+------+------------------+
+    |            |                  |
+    v            v                  v
+  hvac          llm            simulation
+    |            |                  |
+    v            v                  v
+load calc   OpenAI client     Polysun / Modelica
+system design prompts         template generation
+standards     parsers
+          |
+          v
+        core
+   config / exceptions
+          |
+          v
+        utils
+ converters / validators
 ```
 
 ## Module Responsibilities
 
-### `core`
-- **config.py** — Pydantic-settings configuration, loads from `.env`
-- **exceptions.py** — Exception hierarchy (`AIHVACError` base class)
+### core
 
-### `llm`
-- **client.py** — `HVACAssistant` wraps OpenAI chat completions with HVAC-domain system prompts. Returns structured dataclasses (`SystemRecommendation`, `LoadEstimate`).
-- **prompts.py** — `PromptLibrary` provides parameterised prompt templates that instruct the LLM to reply in JSON.
-- **parsers.py** — Robust JSON extraction from LLM output (handles markdown fences, embedded JSON, type coercion).
+- `config.py`: pydantic-settings based configuration
+- `exceptions.py`: shared exception hierarchy
 
-### `hvac`
-- **load_calc.py** — `HeatingLoadCalculator` implements DIN EN 12831 (simplified). Deterministic, no LLM dependency.
-- **system_design.py** — `SystemDesigner` ranks HVAC system options using rule-based scoring (climate, load density, building type).
-- **standards.py** — Reference data: design outdoor temps, U-value tables, DHW demand norms, degree-day methods.
+### hvac
 
-### `simulation`
-- **polysun.py** — `PolysunTemplateGenerator` outputs structured parameter sets for Polysun project setup (heat pump, boiler, hybrid, with/without solar).
-- **modelica.py** — Generates skeleton Modelica `.mo` files for downstream simulation in OpenModelica / Dymola.
+- `load_calc.py`: deterministic simplified heating-load calculation
+- `system_design.py`: rule-based recommendation logic
+- `standards.py`: climate, U-value, and DHW reference data
 
-### `utils`
-- **converters.py** — `UnitConverter` with methods for temperature, energy, pressure, flow, area, and U-value conversions.
-- **validators.py** — Input validation functions that raise `ValidationError` with descriptive messages.
+### llm
 
-## Data Flow
+- `client.py`: high-level OpenAI wrapper for HVAC tasks
+- `prompts.py`: prompt templates for structured outputs
+- `parsers.py`: JSON extraction and response normalization
 
-1. **User** provides building parameters (type, location, area, envelope).
-2. **`HeatingLoadCalculator`** computes design heating load (deterministic).
-3. **`SystemDesigner`** (rule-based) or **`HVACAssistant`** (AI-powered) recommends a system configuration.
-4. **`PolysunTemplateGenerator`** converts the recommendation into a simulation-ready parameter set.
-5. **Engineer** uses the template to configure a Polysun or Modelica project.
+### simulation
 
-## Technology Choices
+- `polysun.py`: structured Polysun-style templates
+- `modelica.py`: Modelica skeleton generation
 
-| Layer | Technology | Rationale |
-|-------|-----------|-----------|
-| Language | Python 3.10+ | Dominant in scientific/engineering computing |
-| LLM | OpenAI API | Best-in-class for structured JSON generation |
-| Config | pydantic-settings | Type-safe, `.env` support, validation |
-| Build | Hatch | Modern PEP 517 build system |
-| Tests | pytest | Industry standard, excellent plugin ecosystem |
-| Lint | Ruff | Fast, comprehensive Python linter |
+### utils
+
+- `converters.py`: engineering unit conversion helpers
+- `validators.py`: reusable input validation functions
+
+## Typical Data Flow
+
+1. A user provides building parameters through Python or the CLI.
+2. `HeatingLoadCalculator` estimates the heating load.
+3. `SystemDesigner` or `HVACAssistant` proposes a system concept.
+4. `PolysunTemplateGenerator` converts that concept into a simulation-oriented template.
+5. The engineer reviews the assumptions and applies the output in a downstream workflow.
+
+## Quality Gates
+
+The repository uses several complementary checks:
+
+- `pytest` for behavioural regression coverage
+- `ruff check` for linting
+- `ruff format --check` for formatting consistency
+- `mypy` for static typing
+- `basedpyright` for language-server-grade type validation against the `src/` layout

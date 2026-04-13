@@ -54,6 +54,7 @@ dev = [
     "pytest-asyncio>=0.21.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
+    "basedpyright>=1.18.0",
     "pre-commit>=3.0.0",
 ]
 docs = [

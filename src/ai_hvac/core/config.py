@@ -8,10 +8,12 @@ See `.env.example` for the full list of recognised variables.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
+from typing import ClassVar, Literal
 
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from ai_hvac.core.exceptions import ConfigurationError
 
 
 class Settings(BaseSettings):
@@ -19,8 +21,9 @@ class Settings(BaseSettings):
 
     Attributes
     ----------
-    openai_api_key : SecretStr
-        OpenAI API key (loaded from ``OPENAI_API_KEY``).
+    openai_api_key : SecretStr | None
+        OpenAI API key (loaded from ``OPENAI_API_KEY``) when AI-backed
+        features are used.
     openai_model : str
         Chat-completion model to use (default ``gpt-4o``).
     openai_max_tokens : int
@@ -33,15 +36,15 @@ class Settings(BaseSettings):
         Directory for caching LLM responses and intermediate results.
     """
 
-    model_config = SettingsConfigDict(
+    model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
 
     # -- OpenAI --
-    openai_api_key: SecretStr = Field(
-        ...,
+    openai_api_key: SecretStr | None = Field(
+        default=None,
         description="OpenAI API key",
     )
     openai_model: str = Field(
@@ -73,4 +76,11 @@ class Settings(BaseSettings):
     # -- Convenience helpers --
     def get_openai_key(self) -> str:
         """Return the plain-text API key (use sparingly)."""
-        return self.openai_api_key.get_secret_value()
+        if self.openai_api_key is None:
+            raise ConfigurationError("OPENAI_API_KEY is required for AI-backed features")
+
+        key = self.openai_api_key.get_secret_value()
+        if not key.strip():
+            raise ConfigurationError("OPENAI_API_KEY cannot be empty")
+
+        return key
