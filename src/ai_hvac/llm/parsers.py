@@ -19,13 +19,13 @@ def extract_json(text: str) -> JSONObject:
     cleaned = re.sub(r"\n?```\s*$", "", cleaned.strip(), flags=re.MULTILINE)
 
     try:
-        data = json.loads(cleaned)
+        data = cast(object, json.loads(cleaned))
     except json.JSONDecodeError:
         match = re.search(r"\{.*\}", text, re.DOTALL)
         if match is None:
             raise LLMError("No JSON object found in LLM response") from None
         try:
-            data = json.loads(match.group())
+            data = cast(object, json.loads(match.group()))
         except json.JSONDecodeError as exc:
             raise LLMError(f"Failed to parse JSON from LLM response: {exc}") from exc
 
@@ -49,7 +49,8 @@ def safe_float(value: object, default: float | None = 0.0) -> float | None:
 def safe_list(value: object) -> list[str]:
     """Ensure *value* is a list of strings."""
     if isinstance(value, list):
-        return [str(v) for v in value]
+        items = cast(list[object], value)
+        return [str(item) for item in items]
     if isinstance(value, str):
         return [value]
     return []

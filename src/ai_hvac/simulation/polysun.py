@@ -70,9 +70,9 @@ class PolysunTemplateGenerator:
         building_type: str = "residential",
         dhw_demand_litres_day: float = 200.0,
     ) -> None:
-        self.heating_load_kw = heating_load_kw
-        self.building_type = building_type
-        self.dhw_demand = dhw_demand_litres_day
+        self.heating_load_kw: float = heating_load_kw
+        self.building_type: str = building_type
+        self.dhw_demand: float = dhw_demand_litres_day
 
     def heat_pump_template(
         self,
