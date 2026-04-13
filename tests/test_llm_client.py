@@ -1,4 +1,4 @@
-"""Tests for the LLM client (mocked — no real API calls)."""
+"""Tests for the LLM client parsing helpers."""
 
 from __future__ import annotations
 
@@ -9,9 +9,6 @@ import pytest
 from ai_hvac.llm.client import HVACAssistant, LoadEstimate, SystemRecommendation
 from ai_hvac.llm.parsers import extract_json, safe_float, safe_list
 
-# ---------------------------------------------------------------------------
-# Parser tests (no mocking needed)
-# ---------------------------------------------------------------------------
 
 class TestExtractJson:
     """Tests for the JSON extraction helper."""
@@ -51,6 +48,9 @@ class TestSafeFloat:
     def test_garbage_returns_default(self) -> None:
         assert safe_float("not_a_number", default=-1.0) == -1.0
 
+    def test_invalid_value_can_return_none(self) -> None:
+        assert safe_float("not_a_number", default=None) is None
+
 
 class TestSafeList:
     def test_list_of_strings(self) -> None:
@@ -63,36 +63,55 @@ class TestSafeList:
         assert safe_list(None) == []
 
 
-# ---------------------------------------------------------------------------
-# Client tests (mocked OpenAI)
-# ---------------------------------------------------------------------------
-
 class TestHVACAssistantParsing:
-    """Test the parsing logic of HVACAssistant without real API calls."""
+    """Test HVACAssistant parsing without real API calls."""
 
     def test_parse_recommendation(self) -> None:
-        raw = json.dumps({
-            "system_type": "Air-source heat pump",
-            "components": ["ASHP", "Buffer tank", "DHW tank"],
-            "estimated_cop": 3.5,
-            "rationale": "Good fit for moderate climate",
-            "warnings": ["Noise level may be an issue"],
-        })
+        raw = json.dumps(
+            {
+                "system_type": "Air-source heat pump",
+                "components": ["ASHP", "Buffer tank", "DHW tank"],
+                "estimated_cop": 3.5,
+                "rationale": "Good fit for moderate climate",
+                "warnings": ["Noise level may be an issue"],
+            }
+        )
         result = HVACAssistant._parse_recommendation(raw)
         assert isinstance(result, SystemRecommendation)
         assert result.system_type == "Air-source heat pump"
         assert result.estimated_cop == 3.5
         assert len(result.components) == 3
 
+    def test_parse_recommendation_accepts_markdown_fences(self) -> None:
+        raw = '```json\n{"system_type": "Air-source heat pump", "components": ["ASHP"]}\n```'
+        result = HVACAssistant._parse_recommendation(raw)
+        assert result.system_type == "Air-source heat pump"
+        assert result.components == ["ASHP"]
+
     def test_parse_load_estimate(self) -> None:
-        raw = json.dumps({
-            "heating_load_kw": 28.5,
-            "cooling_load_kw": None,
-            "assumptions": ["U-wall = 0.28 assumed"],
-            "confidence": "medium",
-        })
+        raw = json.dumps(
+            {
+                "heating_load_kw": 28.5,
+                "cooling_load_kw": None,
+                "assumptions": ["U-wall = 0.28 assumed"],
+                "confidence": "medium",
+            }
+        )
         result = HVACAssistant._parse_load_estimate(raw)
         assert isinstance(result, LoadEstimate)
         assert result.heating_load_kw == 28.5
         assert result.cooling_load_kw is None
         assert result.confidence == "medium"
+
+    def test_parse_load_estimate_normalises_common_llm_types(self) -> None:
+        raw = json.dumps(
+            {
+                "heating_load_kw": "28.5",
+                "cooling_load_kw": "7.2",
+                "assumptions": "U-wall = 0.28 assumed",
+            }
+        )
+        result = HVACAssistant._parse_load_estimate(raw)
+        assert result.heating_load_kw == 28.5
+        assert result.cooling_load_kw == 7.2
+        assert result.assumptions == ["U-wall = 0.28 assumed"]
