@@ -1,29 +1,18 @@
 #!/usr/bin/env python3
-"""
-Example: AI-powered HVAC system recommendation.
-
-Uses the HVACAssistant (OpenAI-backed) to get a system design
-recommendation for a multi-family residential building.
-
-Requirements:
-    Set OPENAI_API_KEY in your .env file before running.
-"""
+"""Example: AI-powered HVAC system recommendation."""
 
 import os
 import sys
 
-# Fail gracefully if API key is not configured
 if not os.getenv("OPENAI_API_KEY"):
-    print("⚠️  OPENAI_API_KEY not set.  Copy .env.example to .env and add your key.")
-    print("    This example requires an active OpenAI API key.")
+    print("OPENAI_API_KEY not set. Copy .env.example to .env and add your key.")
+    print("This example requires an active OpenAI API key.")
     sys.exit(1)
 
 from ai_hvac import HVACAssistant
 
-# 1. Create the assistant
 assistant = HVACAssistant()
 
-# 2. Request a system recommendation
 print("Requesting AI system recommendation...")
 print()
 
@@ -34,9 +23,9 @@ recommendation = assistant.recommend_system(
     cooling_required=False,
     dhw_required=True,
     additional_context=(
-        "The building has 24 apartments across 4 floors.  "
-        "Underfloor heating with 35/28 °C design temperatures.  "
-        "Rooftop available for PVT collectors (~120 m²).  "
+        "The building has 24 apartments across 4 floors. "
+        "Underfloor heating with 35/28 degC design temperatures. "
+        "Rooftop available for PVT collectors (~120 m2). "
         "Gas connection available as backup."
     ),
 )
@@ -48,23 +37,22 @@ print(f"  System type   : {recommendation.system_type}")
 print(f"  Estimated COP : {recommendation.estimated_cop}")
 print()
 print("Components:")
-for comp in recommendation.components:
-    print(f"  • {comp}")
+for component in recommendation.components:
+    print(f"  - {component}")
 print()
 print(f"Rationale: {recommendation.rationale}")
 print()
 if recommendation.warnings:
-    print("⚠️  Warnings:")
-    for w in recommendation.warnings:
-        print(f"  • {w}")
+    print("Warnings:")
+    for warning in recommendation.warnings:
+        print(f"  - {warning}")
 
-# 3. Ask a follow-up question
 print()
 print("-" * 60)
 answer = assistant.ask(
-    "What is the recommended buffer tank volume for a 2400 m² "
+    "What is the recommended buffer tank volume for a 2400 m2 "
     "multi-family building with underfloor heating and an air-source "
-    "heat pump?  Give the answer in litres and explain the sizing rule."
+    "heat pump? Give the answer in litres and explain the sizing rule."
 )
 print("Follow-up Q&A:")
 print(answer)

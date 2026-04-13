@@ -1,9 +1,4 @@
-"""
-Parsers for extracting structured data from LLM responses.
-
-These helpers complement the JSON-mode parsing in :mod:`ai_hvac.llm.client`
-by providing additional validation and normalisation steps.
-"""
+"""Parsers for extracting structured data from LLM responses."""
 
 from __future__ import annotations
 
@@ -15,34 +10,13 @@ from ai_hvac.core.exceptions import LLMError
 
 
 def extract_json(text: str) -> dict[str, Any]:
-    """Extract the first JSON object from *text*.
-
-    The LLM sometimes wraps JSON in markdown code fences (````json … ````).
-    This function strips those fences before parsing.
-
-    Parameters
-    ----------
-    text : str
-        Raw LLM output.
-
-    Returns
-    -------
-    dict
-        Parsed JSON object.
-
-    Raises
-    ------
-    LLMError
-        If no valid JSON object can be found.
-    """
-    # Strip optional markdown code fences
+    """Extract the first JSON object from *text*."""
     cleaned = re.sub(r"^```(?:json)?\s*\n?", "", text.strip(), flags=re.MULTILINE)
     cleaned = re.sub(r"\n?```\s*$", "", cleaned.strip(), flags=re.MULTILINE)
 
     try:
         data = json.loads(cleaned)
     except json.JSONDecodeError:
-        # Fall back: try to find the first { ... } block
         match = re.search(r"\{.*\}", text, re.DOTALL)
         if match is None:
             raise LLMError("No JSON object found in LLM response") from None
@@ -56,7 +30,7 @@ def extract_json(text: str) -> dict[str, Any]:
     return data
 
 
-def safe_float(value: Any, default: float = 0.0) -> float:
+def safe_float(value: Any, default: float | None = 0.0) -> float | None:
     """Coerce *value* to ``float``, falling back to *default*."""
     if value is None:
         return default
